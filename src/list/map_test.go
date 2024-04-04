@@ -362,3 +362,23 @@ func BenchmarkTypedListWithLenAtMap(b *testing.B) {
 	}
 	b.ReportAllocs()
 }
+
+func BenchmarkTypedListCopyWithLenAtMapAndAny(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+
+		l := TypedList[item]{}
+
+		for i := 0; i < 1000; i++ {
+			l.Add(item{value: i})
+		}
+
+		l2 := l.MapWithCapAndAny(func(i item) any {
+			return item{value: i.value * 2}
+		})
+
+		if l2.Get(500).(item).value != 1000 {
+			b.Errorf("Expected item value to be 1000, got %d", l2.Get(500).(item).value)
+		}
+	}
+	b.ReportAllocs()
+}

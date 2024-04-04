@@ -1,5 +1,7 @@
 package list
 
+// this is version 1 of a typed list
+
 import (
 	"sync"
 )
@@ -47,6 +49,16 @@ func NewTypedListWithLen[T any](l int) *TypedList[T] {
 }
 
 func (l *TypedList[T]) Add(item T) {
+	l.items = append(l.items, item)
+}
+
+func (l TypedList[T]) AddCopy(item T) TypedList[T] {
+	return TypedList[T]{
+		items: append(l.items, item),
+	}
+}
+
+func (l *TypedList[T]) AddSync(item T) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -54,6 +66,10 @@ func (l *TypedList[T]) Add(item T) {
 }
 
 func (l *TypedList[T]) Set(i int, item T) {
+	l.items[i] = item
+}
+
+func (l *TypedList[T]) SetSync(i int, item T) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -61,6 +77,10 @@ func (l *TypedList[T]) Set(i int, item T) {
 }
 
 func (l *TypedList[T]) Get(index int) T {
+	return l.items[index]
+}
+
+func (l *TypedList[T]) GetSync(index int) T {
 	l.lock.RLock()
 	defer l.lock.RUnlock()
 
@@ -78,6 +98,7 @@ func (l *TypedList[T]) Filter(p func(item T) bool) *TypedList[T] {
 			newList.Add(item)
 		}
 	}
+
 	return newList
 }
 
@@ -91,7 +112,23 @@ func (l *TypedList[T]) Filter(p func(item T) bool) *TypedList[T] {
 // 	return newList
 // }
 
+func (l *TypedList[T]) MapWithCapAndAny(m func(item T) any) *TypedList[any] {
+	newList := NewTypedListWithCap[any](len(l.items))
+	for _, item := range l.items {
+		newList.Add(m(item))
+	}
+	return newList
+}
+
 func Map[T any, R any](l *TypedList[T], m func(item T) R) *TypedList[R] {
+	newList := NewTypedList[R]()
+	for _, item := range l.items {
+		newList.Add(m(item))
+	}
+	return newList
+}
+
+func MapSync[T any, R any](l *TypedList[T], m func(item T) R) *TypedList[R] {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -103,6 +140,14 @@ func Map[T any, R any](l *TypedList[T], m func(item T) R) *TypedList[R] {
 }
 
 func MapWithLen[T any, R any](l *TypedList[T], m func(item T) R) *TypedList[R] {
+	newList := NewTypedListWithLen[R](len(l.items))
+	for i, item := range l.items {
+		newList.Set(i, m(item))
+	}
+	return newList
+}
+
+func MapWithLenSync[T any, R any](l *TypedList[T], m func(item T) R) *TypedList[R] {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -114,6 +159,14 @@ func MapWithLen[T any, R any](l *TypedList[T], m func(item T) R) *TypedList[R] {
 }
 
 func MapWithCap[T any, R any](l *TypedList[T], m func(item T) R) *TypedList[R] {
+	newList := NewTypedListWithCap[R](len(l.items))
+	for _, item := range l.items {
+		newList.Add(m(item))
+	}
+	return newList
+}
+
+func MapWithCapSync[T any, R any](l *TypedList[T], m func(item T) R) *TypedList[R] {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -121,5 +174,18 @@ func MapWithCap[T any, R any](l *TypedList[T], m func(item T) R) *TypedList[R] {
 	for _, item := range l.items {
 		newList.Add(m(item))
 	}
+
+	return newList
+}
+
+func MapWithLenCopy[T any, R any](l TypedList[T], m func(item T) R) TypedList[R] {
+	newList := TypedList[R]{
+		items: make([]R, len(l.items)),
+	}
+
+	for i, item := range l.items {
+		newList.items[i] = m(item)
+	}
+
 	return newList
 }
