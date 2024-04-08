@@ -46,6 +46,16 @@ Map on the struct vs. extra Map function vs. any response
 
 > The `.Map` function on the struct makes sense, naturally, coming from TypeScript, the hell of generic complexity, I feel like I want to have the possibility to put one generic type into the `.Map` function, and get another one out. For example `func (l *list[R]) Map[T](mapper func (obj R) T) *list[T]`, we would transform a list of `R` into a list of `T` here. But it seems like it's not possible to put another generic on a function that is callable on a struct that already has a generic. A solution was that I would take an external `Map` function, that get's the `list` as first parameter, but that would not be `chainable`. Returning `any` as result and casting it afterwards would be another solution. Update: I tried `any`, and it increased the allocations agai but ~800, so this is probably not a valid solution when the focus is on performance.
 
+The `sync` lock mechanism costs a lot of performance (maybe I implement it wrong)
+
+> I decided to create a `safe` and an `unsafe` list, `safe` will be able to handle async work, `unsafe` will not be able to do that. Therefor, I needed to abstract all functions into an `list` interface. I also will implement `IsSafe`, `ToSafe` & `ToUnsafe` funtions on the `list`'s.
+
+### The files
+
+- [interface](./pkg/list/list.go)
+- [unsafe list](./pkg/list/unsafe.go)
+- [safe list](./pkg/list/safe.go)
+
 ## Resources
 
 - https://medium.com/eureka-engineering/understanding-allocations-in-go-stack-heap-memory-9a2631b5035d
